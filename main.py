@@ -1,3 +1,4 @@
+import os
 import random
 import pandas as pd
 import numpy as np
@@ -88,7 +89,7 @@ class Simulation:
 
         print(df)
         if to_csv:
-            df.to_csv('results\\out.csv')
+            df.to_csv(os.path.join(os.getcwd(), 'results', 'out.csv'))
 
 lambd = 15
 channels_num = 6

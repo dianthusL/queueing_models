@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
-from scipy.special import factorial
+from scipy.special import factorial, binom
+from itertools import combinations
 
 from entry import Entry
 from channel import Channel
@@ -23,6 +24,10 @@ class System:
 
     def available_channels(self):
         return [c for c in self.channels if not c.status]
+
+    @staticmethod
+    def sk_symbol(rho_k, k):
+        return np.sum([np.prod(c) for c in combinations(rho_k, k)])
 
     def calculate_parameters(self):
         lambd = self.arrival_rate
@@ -58,12 +63,17 @@ class System:
             k_values = np.arange(0, m)
             rho_k = lambd / mu_k
 
-            # assert lambd < mu_k
+            assert self.sk_symbol(rho_k, m) / self.sk_symbol(rho_k, m-1) < 1
+            p_0 = 1. / (1. + np.sum([self.sk_symbol(rho_k, i) / (factorial(i) * binom(m, i)) for i in k_values]) + 
+                  (self.sk_symbol(rho_k, m)*self.sk_symbol(rho_k, m-1)) / (factorial(m)*(self.sk_symbol(rho_k, m-1)-self.sk_symbol(rho_k, m))))
+            m_0 = m * self.sk_symbol(rho_k, m) / self.sk_symbol(rho_k, m-1)
+
             t_k = 1. / mu_k
-            K = np.nan
-            T = np.nan
-            Q = np.nan
-            W = np.nan
+            
+            Q = p_0 * (self.sk_symbol(rho_k, m-1) / (factorial(m) * np.power(self.sk_symbol(rho_k, m-1)/self.sk_symbol(rho_k, m) - 1, 2)))
+            K = Q + m_0
+            T = K / lambd
+            W = Q / lambd
 
             values = [lambd, *mu_k, *rho_k, *t_k, K, T, Q, W]
             params = ['lambda',
