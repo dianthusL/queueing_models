@@ -1,122 +1,97 @@
 import numpy as np
 from scipy import linalg
+from scipy.special import factorial
+
+import network_config as nc
 
 
-working_time = 8*60 # office working time (every system in the network works in the same hours)
-requester_num = np.array([100, 20, 50, 20, 20, 40]) # number of requesters per class
+class System:
+	def __init__(self, type_, mu, channels_num):
+		self.type = type_
+		self.mu = mu
+		self.m = channels_num
 
-lambdas = requester_num / working_time # entry lambdas for every class
+class Network:
+	def __init__(self, lambdas, p_0_ir, p_r, types, service_times, channels_num):
+		self.lambdas = lambdas
+		self.p_0_ir = p_0_ir
+		self.p_r = p_r
+		self.mu_ir = 1. / service_times
+		self.channels_num = np.where(channels_num==np.inf, 1, channels_num)
 
-# entry probabilities for every system (i) for all classes (r) [i x r == 9 x 6]
-# for now every class at the beginning is allowed to enter only 1st system (entry ticket)
-p_0_ir = np.array([[1.,1.,1.,1.,1.,1.],
-				   [0.,0.,0.,0.,0.,0.],
-				   [0.,0.,0.,0.,0.,0.],
-				   [0.,0.,0.,0.,0.,0.],
-				   [0.,0.,0.,0.,0.,0.],
-				   [0.,0.,0.,0.,0.,0.],
-				   [0.,0.,0.,0.,0.,0.],
-				   [0.,0.,0.,0.,0.,0.],
-				   [0.,0.,0.,0.,0.,0.]])
+		self.lambda_0_ir = self.lambdas * self.p_0_ir
+		self.lambda_ir = self.calculate_lambda_ir()
+		self.rho_ir = self.calculate_rho_ir()
+		
+		self.systems = self.generate_systems(types, self.mu_ir, self.channels_num)
+	
+	@staticmethod
+	def generate_systems(types, mu_ir, channels_num):
+		return [System(t, mu, int(n)) for t, mu, n in zip(types, mu_ir, channels_num)]
 
-lambda_0_ir = lambdas * p_0_ir
-print(lambda_0_ir)
+	def calculate_lambda_ir(self):
+		lambd = []
+		for i, p in enumerate(self.p_r):
+			np.fill_diagonal(p, -1)
+			lambd.append(linalg.solve(p.T, -self.lambda_0_ir[:, i]))
+		return np.array(lambd).T
 
-""" SYSTEMS:
-1. Entry ticket		M/M/inf
-2. Application		M/M/inf
-3. Ticket office	M/M/3
-4. O1				M/M/3
-5. O2				M/M/1
-6. O3				M/M/2
-7. O4				M/M/1
-8. O5				M/M/1
-9. O6				M/M/2
-"""
+	def calculate_rho_ir(self):
+		return self.lambda_ir / (self.channels_num * self.mu_ir)
 
-# Transition matrices [i x i == 9x9]
-# Class 1:
-p_1 = np.array([[0.,.5,.5,0.,0.,0.,0.,0.,0.],
-				[0.,0.,1.,0.,0.,0.,0.,0.,0.],
-				[0.,0.,0.,1.,0.,0.,0.,0.,0.],
-				[0.,0.,0.,0.,0.,0.,0.,0.,0.],
-				[0.,0.,0.,0.,0.,0.,0.,0.,0.],
-				[0.,0.,0.,0.,0.,0.,0.,0.,0.],
-				[0.,0.,0.,0.,0.,0.,0.,0.,0.],
-				[0.,0.,0.,0.,0.,0.,0.,0.,0.],
-				[0.,0.,0.,0.,0.,0.,0.,0.,0.]])
-# Class 2:
-p_2 = np.array([[0.,.5,.5,0.,0.,0.,0.,0.,0.],
-				[0.,0.,1.,0.,0.,0.,0.,0.,0.],
-				[0.,0.,0.,0.,1.,0.,0.,0.,0.],
-				[0.,0.,0.,0.,0.,0.,0.,0.,0.],
-				[0.,0.,0.,0.,0.,0.,0.,0.,0.],
-				[0.,0.,0.,0.,0.,0.,0.,0.,0.],
-				[0.,0.,0.,0.,0.,0.,0.,0.,0.],
-				[0.,0.,0.,0.,0.,0.,0.,0.,0.],
-				[0.,0.,0.,0.,0.,0.,0.,0.,0.]])
-# Class 3:
-p_3 = np.array([[0.,.5,.5,0.,0.,0.,0.,0.,0.],
-				[0.,0.,1.,0.,0.,0.,0.,0.,0.],
-				[0.,0.,0.,0.,0.,1.,0.,0.,0.],
-				[0.,0.,0.,0.,0.,0.,0.,0.,0.],
-				[0.,0.,0.,0.,0.,0.,0.,0.,0.],
-				[0.,0.,0.,0.,0.,0.,0.,0.,0.],
-				[0.,0.,0.,0.,0.,0.,0.,0.,0.],
-				[0.,0.,0.,0.,0.,0.,0.,0.,0.],
-				[0.,0.,0.,0.,0.,0.,0.,0.,0.]])
-# Class 4:
-p_4 = np.array([[0.,0.,0.,0.,0.,0.,1.,0.,0.],
-				[0.,0.,0.,0.,0.,0.,0.,0.,0.],
-				[0.,0.,0.,0.,0.,0.,0.,0.,0.],
-				[0.,0.,0.,0.,0.,0.,0.,0.,0.],
-				[0.,0.,0.,0.,0.,0.,0.,0.,0.],
-				[0.,0.,0.,0.,0.,0.,0.,0.,0.],
-				[0.,0.,0.,0.,0.,0.,0.,0.,0.],
-				[0.,0.,0.,0.,0.,0.,0.,0.,0.],
-				[0.,0.,0.,0.,0.,0.,0.,0.,0.]])
-# Class 5:
-p_5 = np.array([[0.,0.,0.,0.,0.,0.,0.,1.,0.],
-				[0.,0.,0.,0.,0.,0.,0.,0.,0.],
-				[0.,0.,0.,0.,0.,0.,0.,0.,0.],
-				[0.,0.,0.,0.,0.,0.,0.,0.,0.],
-				[0.,0.,0.,0.,0.,0.,0.,0.,0.],
-				[0.,0.,0.,0.,0.,0.,0.,0.,0.],
-				[0.,0.,0.,0.,0.,0.,0.,0.,0.],
-				[0.,0.,0.,0.,0.,0.,0.,0.,0.],
-				[0.,0.,0.,0.,0.,0.,0.,0.,0.]])
-# Class 6:
-p_6 = np.array([[0.,0.,0.,0.,0.,0.,0.,0.,1.],
-				[0.,0.,0.,0.,0.,0.,0.,0.,0.],
-				[0.,0.,0.,0.,0.,0.,0.,0.,0.],
-				[0.,0.,0.,0.,0.,0.,0.,0.,0.],
-				[0.,0.,0.,0.,0.,0.,0.,0.,0.],
-				[0.,0.,0.,0.,0.,0.,0.,0.,0.],
-				[0.,0.,0.,0.,0.,0.,0.,0.,0.],
-				[0.,0.,0.,0.,0.,0.,0.,0.,0.],
-				[0.,0.,0.,0.,0.,0.,0.,0.,0.]])
+	def calculate_state(self, entries_num):
+		return np.prod([self.calculate_pi_k(k_i, i) for i, k_i in enumerate(entries_num)])
 
-p_r = [p_1, p_2, p_3, p_4, p_5, p_6]
-lambda_ir = []
+	def calculate_pi_k(self, k_i, i):
+		s = self.systems[i]
+		if s.type == 1:
+			if s.m == 1:
+				return (1 - self.rho_i(i)) * np.power(self.rho_i(i), k_i)
+			else:
+				m = s.m
+				k_values = np.array(range(m))
+				first = 1. / (np.sum(np.power(m*self.rho_i(i), k_values) / factorial(k_values)) \
+					+ (np.power(m*self.rho_i(i), m) / (factorial(m) * (1-self.rho_i(i)))))
+				if k_i <= m:
+					return first * np.power(m * self.rho_i(i), k_i) / factorial(k_i)
+				else:
+					return first * np.power(m, m) * np.power(self.rho_i(i), k_i) / factorial(m)
+		elif s.type == 3:
+			return np.exp(-self.rho_i(i)) * (np.power(self.rho_i(i), k_i) / factorial(k_i))
 
-for i, p in enumerate(p_r):
-	np.fill_diagonal(p, -1)
-	lambda_ir.append(linalg.solve(p.T, -lambda_0_ir[:, i]))
+	def rho_i(self, i):
+		return np.sum(self.rho_ir[i, :])
 
-lambda_ir = np.array(lambda_ir).T
-print("Throughput of each class in every system:")
-print(lambda_ir)
+	def calculate_K_ir(self):
+		K_ir = np.zeros(self.rho_ir.shape)
+		for i, s in enumerate(self.systems):
+			for j in range(self.rho_ir.shape[1]):
+				if s.type == 1:
+					m_i = s.m
+					k_v = np.array(range(m_i))
+					rho_ir = self.rho_ir[i, j]
+					K_ir[i, j] = m_i * rho_ir \
+								 + (rho_ir / (1 - rho_ir)) \
+								 * (np.power(m_i * rho_ir, m_i) / (factorial(m_i) * (1 - rho_ir))) \
+								 * (1 / (np.sum((np.power(m_i * rho_ir, k_v)) / factorial(k_v)) \
+								 + (np.power(m_i * rho_ir, m_i) / factorial(m_i) * (1 / (1 - rho_ir))))) 
+				elif s.type == 3:
+					K_ir[i, j] = self.lambda_ir[i, j] / s.mu
+
+		return K_ir
 
 
-# relative service intensity rho_ir [i x r == 9 x 6]
-service_times = np.array([[1/6,.5,2,5,5,3,2,2,2]]) # service times per system [minutes] (do not depend on class)
-channels_num = np.array([[np.inf,np.inf,3,3,1,2,1,1,2]]) # m_i
+lambdas = nc.requester_num / nc.working_time # entry lambdas for every class
 
-# for M/M/c:	rho_ir = lambda_ir / (m_i * mu_ir)
-# for M/M/inf	rho_ir = lambda_ir / mu_ir ??
-channels_num[channels_num == np.inf] = 1
-mu_ir = 1. / service_times
-rho_ir = lambda_ir / (channels_num.T * mu_ir.T)
+net = Network(lambdas, nc.p_0_ir, nc.p_r, nc.system_types, nc.service_times, nc.channels_num)
+print("Throughput of each class in every system (lambda_ir):")
+print(net.lambda_ir)
+print("\nRelative service intensity of each class in every system (rho_ir):")
+print(net.rho_ir)
 
-print("Relative service intensity of each class in every system:")
-print(rho_ir)
+print("\nNetwork states probabilities:")
+for state in nc.network_states:
+	print("PI{} = {:.35f}".format(state, net.calculate_state(state)))
+
+print("\nAverage number of entries of each class in every system (K_ir):")
+print(net.calculate_K_ir())
