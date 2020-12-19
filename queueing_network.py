@@ -18,6 +18,7 @@ class Network:
         self.p_0_ir = p_0_ir
         self.p_r = p_r
         self.mu_ir = 1. / service_times
+        self.types = types
         self.channels_num = np.where(channels_num == np.inf, 1, channels_num)
 
         self.lambda_0_ir = self.lambdas * self.p_0_ir
@@ -25,6 +26,7 @@ class Network:
         self.rho_ir = self.calculate_rho_ir()
 
         self.systems = self.generate_systems(types, self.mu_ir, self.channels_num)
+        self.k_ir = self.calculate_K_ir()
 
     @staticmethod
     def generate_systems(types, mu_ir, channels_num):
@@ -71,14 +73,30 @@ class Network:
                     m_i = s.m
                     k_v = np.array(range(m_i))
                     rho_ir = self.rho_ir[i, j]
+                    rho_i = self.rho_i(i)
                     K_ir[i, j] = m_i * rho_ir \
-                        + (rho_ir / (1 - rho_ir)) \
-                        * (np.power(m_i * rho_ir, m_i) / (factorial(m_i) * (1 - rho_ir))) \
-                        * (1 / (np.sum((np.power(m_i * rho_ir, k_v)) / factorial(k_v)) + (np.power(m_i * rho_ir, m_i) / factorial(m_i) * (1 / (1 - rho_ir)))))
+                        + (rho_ir / (1 - rho_i)) \
+                        * (np.power(m_i * rho_i, m_i) / (factorial(m_i) * (1 - rho_i))) \
+                        * (1 / (np.sum((np.power(m_i * rho_i, k_v)) / factorial(k_v)) + (np.power(m_i * rho_i, m_i) / factorial(m_i) * (1 / (1 - rho_i)))))
                 elif s.type == 3:
                     K_ir[i, j] = self.lambda_ir[i, j] / s.mu
 
         return K_ir
+
+    def calculate_T_ir(self):
+        return np.divide(self.k_ir, self.lambda_ir, out=np.zeros_like(self.k_ir), where=self.lambda_ir!=0)
+
+    def calculate_W_ir(self):
+        t = 1. / np.hstack([self.mu_ir for _ in range(self.lambda_ir.shape[1])])
+        t_ir = self.calculate_T_ir()
+        return np.subtract(t_ir, t, out=np.zeros_like(t_ir), where=t_ir!=0)
+
+    def calculate_Q_ir(self):
+        return self.lambda_ir * self.calculate_W_ir()
+
+    def cost_function(self, waiting_costs):
+        q_ir = self.calculate_Q_ir()[self.types!=3, :]
+        return np.sum(q_ir * waiting_costs)
 
 
 lambdas = nc.requester_num / nc.working_time  # entry lambdas for every class
@@ -91,7 +109,9 @@ print(net.rho_ir)
 
 print("\nNetwork states probabilities:")
 for state in nc.network_states:
-    print("PI{} = {:.35f}".format(state, net.calculate_state(state)))
+    print("PI{} = {:.20f}".format(state, net.calculate_state(state)))
 
 print("\nAverage number of entries of each class in every system (K_ir):")
-print(net.calculate_K_ir())
+print(net.k_ir)
+
+print(net.cost_function(nc.C_ir))

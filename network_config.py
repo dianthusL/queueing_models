@@ -1,7 +1,7 @@
 import numpy as np
 
-working_time = 8 * 60  # office working time [min] (every system in the network works in the same hours)
-requester_num = np.array([100, 20, 50, 20, 40])  # number of requesters per class
+working_time = 6 * 60  # office working time [min] (every system in the network works in the same hours)
+requester_num = np.array([250, 60, 150, 60, 100])  # number of requesters per class
 
 # entry probabilities for every system (i) for all classes (r) [i x r == 9 x 5]
 # for now every class at the beginning is only allowed to enter 1st system (entry ticket)
@@ -82,10 +82,20 @@ p_r = [p_1, p_2, p_3, p_4, p_5]
 """
 system_types = np.array([3, 3, 1, 1, 1, 1, 1, 1, 1])
 # service times per system [min] (do not depend on class)
-service_times = np.array([1 / 6, .5, 2, 5, 5, 3, 2, 2, 2]).reshape(-1, 1)
+service_times = np.array([1 / 3, 1, 2, 5, 5, 3, 2, 2, 3]).reshape(-1, 1)
 channels_num = np.array([np.inf, np.inf, 3, 3, 1, 2, 1, 1, 2]).reshape(-1, 1)  # m_i
 
 network_states = [(0, 0, 0, 0, 0, 0, 0, 0, 0),
                   (5, 5, 3, 2, 0, 1, 5, 6, 2),
                   (3, 3, 2, 2, 1, 1, 0, 0, 2),
                   (5, 4, 3, 2, 1, 0, 1, 2, 3)]
+
+# waiting costs of classes entries in each system
+# only systems with finite number of channels matter (3-9)
+C_ir = np.array([[6, 5, 5, 0, 0],
+                 [4, 0, 0, 0, 0],
+                 [0, 3, 0, 0, 0],
+                 [0, 0, 4, 0, 0],
+                 [0, 0, 0, 5, 0],
+                 [0, 0, 0, 0, 4],
+                 [6, 5, 5, 0, 0]])
