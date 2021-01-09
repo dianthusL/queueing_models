@@ -3,8 +3,8 @@ import pandas as pd
 from scipy.special import factorial, binom
 from itertools import combinations
 
-from entry import Entry
-from channel import Channel
+from .entry import Entry
+from .channel import Channel
 
 
 class System:
@@ -40,7 +40,7 @@ class System:
 
             # relative service intensity
             rho = lambd / mu
-            assert lambd < m * mu
+            assert lambd < m * mu, "Ergodicity condition not met"
             # probability that there is zero entries in the system
             p_0 = 1. / (np.sum(np.power(rho, k_values) / factorial(k_values)) + (np.power(rho, m) / (factorial(m-1) * (m - rho))))
             # average service time
@@ -63,7 +63,7 @@ class System:
             k_values = np.arange(0, m)
             rho_k = lambd / mu_k
 
-            assert self.sk_symbol(rho_k, m) / self.sk_symbol(rho_k, m-1) < 1
+            assert self.sk_symbol(rho_k, m) / self.sk_symbol(rho_k, m-1) < 1, "Ergodicity condition not met"
             p_0 = 1. / (1. + np.sum([self.sk_symbol(rho_k, i) / (factorial(i) * binom(m, i)) for i in k_values]) + 
                   (self.sk_symbol(rho_k, m)*self.sk_symbol(rho_k, m-1)) / (factorial(m)*(self.sk_symbol(rho_k, m-1)-self.sk_symbol(rho_k, m))))
             m_0 = m * self.sk_symbol(rho_k, m) / self.sk_symbol(rho_k, m-1)

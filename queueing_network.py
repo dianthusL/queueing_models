@@ -100,21 +100,24 @@ class Network:
         return np.sum(q_ir * waiting_costs) + np.sum(m_i * unoccupied_costs)
 
     def is_valid(self):
-        return True if np.all(np.array([self.rho_i(i) for i in range(len(self.systems))]) < 1) else False
+        return np.all(np.array([self.rho_i(i) for i in range(len(self.systems))]) < 1)
 
 
 if __name__ == "__main__":
     lambdas = nc.requester_num / nc.working_time  # entry lambdas for every class
 
     net = Network(lambdas, nc.p_0_ir, nc.p_r, nc.system_types, nc.service_times, nc.channels_num)
-    print("Throughput of each class in every system (lambda_ir):")
-    print(net.lambda_ir)
-    print("\nRelative service intensity of each class in every system (rho_ir):")
-    print(net.rho_ir)
+    if net.is_valid():
+        print("Throughput of each class in every system (lambda_ir):")
+        print(net.lambda_ir)
+        print("\nRelative service intensity of each class in every system (rho_ir):")
+        print(net.rho_ir)
 
-    print("\nNetwork states probabilities:")
-    for state in nc.network_states:
-        print("PI{} = {:.20f}".format(state, net.calculate_state(state)))
+        print("\nNetwork states probabilities:")
+        for state in nc.network_states:
+            print("PI{} = {:.20f}".format(state, net.calculate_state(state)))
 
-    print("\nAverage number of entries of each class in every system (K_ir):")
-    print(net.k_ir)
+        print("\nAverage number of entries of each class in every system (K_ir):")
+        print(net.k_ir)
+    else:
+        print("Ergodicity condition not met, try to adjust the parameters")

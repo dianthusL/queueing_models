@@ -1,5 +1,15 @@
 import numpy as np
 
+# M/M/m SIMULATION CONFIGURATION
+lambd = 15
+m_channels = 9
+total_time = 8 * 60  # [min]
+# for below 'mu' parameters set the same values if you want to simulate ordinary M/M/m system
+# and set different in case of M/M/m system with individual service
+# mu_s = [4, 4, 4, 4, 4, 4, 4, 4, 4]
+mu_s = [4, 5, 6, 7, 8, 3, 2, 1, 7]
+
+
 # NETWORK CONFIGURATION
 # office working time [min]
 # every system in the network works in the same hours
@@ -25,7 +35,7 @@ p_0_ir = [[1., 1., 1., 1., 1.],
 p_1 = [[.0, .4, .3, .0, .0, .0, .0, .0, .3],
        [.0, .0, 1., .0, .0, .0, .0, .0, .0],
        [.0, .0, .0, 1., .0, .0, .0, .0, .0],
-       [.0, .0, .0, .0, .0, .0, .0, .0, .0],
+       [.0, .1, .1, .0, .0, .0, .0, .0, .0],
        [.0, .0, .0, .0, .0, .0, .0, .0, .0],
        [.0, .0, .0, .0, .0, .0, .0, .0, .0],
        [.0, .0, .0, .0, .0, .0, .0, .0, .0],
@@ -36,7 +46,7 @@ p_2 = [[.0, .4, .3, .0, .0, .0, .0, .0, .3],
        [.0, .0, 1., .0, .0, .0, .0, .0, .0],
        [.0, .0, .0, .0, 1., .0, .0, .0, .0],
        [.0, .0, .0, .0, .0, .0, .0, .0, .0],
-       [.0, .0, .0, .0, .0, .0, .0, .0, .0],
+       [.0, .1, .1, .0, .0, .0, .0, .0, .0],
        [.0, .0, .0, .0, .0, .0, .0, .0, .0],
        [.0, .0, .0, .0, .0, .0, .0, .0, .0],
        [.0, .0, .0, .0, .0, .0, .0, .0, .0],
@@ -47,7 +57,7 @@ p_3 = [[.0, .4, .3, .0, .0, .0, .0, .0, .3],
        [.0, .0, .0, .0, .0, 1., .0, .0, .0],
        [.0, .0, .0, .0, .0, .0, .0, .0, .0],
        [.0, .0, .0, .0, .0, .0, .0, .0, .0],
-       [.0, .0, .0, .0, .0, .0, .0, .0, .0],
+       [.0, .1, .1, .0, .0, .0, .0, .0, .0],
        [.0, .0, .0, .0, .0, .0, .0, .0, .0],
        [.0, .0, .0, .0, .0, .0, .0, .0, .0],
        [.0, .0, .0, .0, .0, .0, .0, .0, .0]]
@@ -111,6 +121,7 @@ C_ir = [[6, 5, 5, 0, 0],
 # related to existence of channel not being used
 C_i = [5, 5, 3, 3, 2, 2, 5]
 
+
 # CLONALG CONFIGURATION
 # minimum and maximum number of available channels for every system
 min_num = 1
@@ -121,10 +132,12 @@ clone_rate = 10
 mutation_rate = 8
 iterations = 100
 
+
 """
 NON-EDITABLE PART BELOW
-this is just the preparation of whole configuration for further computations
+this is the preparation of whole configuration for further computations
 """
+mu_s = np.array(mu_s)
 requester_num = np.array(requester_num)
 p_0_ir = np.array(p_0_ir)
 p_1 = np.array(p_1)

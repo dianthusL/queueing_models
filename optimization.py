@@ -123,7 +123,7 @@ class ClonAlg:
 
         sol = sorted(population, key=lambda cell: cell.value)[0]
         print(sol)
-        self.summarize(worst, avg, best)
+        self.summarize(worst, avg, best, save=False)
 
 
 if __name__ == "__main__":

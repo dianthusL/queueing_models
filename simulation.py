@@ -1,9 +1,9 @@
 import os
 import random
-import pandas as pd
 import numpy as np
 
-from system import System
+from mmm_system.system import System
+import config as nc
 
 
 class Simulation:
@@ -91,12 +91,8 @@ class Simulation:
         if to_csv:
             df.to_csv(os.path.join(os.getcwd(), 'results', 'out.csv'))
 
-lambd = 15
-channels_num = 6
-total_time = 8*60
-mu_s_const = np.array([4, 4, 4, 4, 4, 4])
-mu_s_diff = np.array([4, 5, 6, 7, 8, 3])
 
-s = Simulation(total_time, lambd, channels_num, mu_s_diff)
-s.run()
-s.summarize(True)
+if __name__ == "__main__":
+    s = Simulation(nc.total_time, nc.lambd, nc.m_channels, nc.mu_s)
+    s.run()
+    s.summarize(True)
